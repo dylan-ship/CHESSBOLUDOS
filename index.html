@@ -1,0 +1,436 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Club de Ajedrez</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#c6a77c;color:#30251b;font-family:Georgia,serif}
+header{text-align:center;padding:20px;background:#3d271a;color:#f7e8c9;border-bottom:5px solid #9a7044}
+header h1{margin:0}
+main{max-width:1450px;margin:20px auto;padding:12px;display:grid;grid-template-columns:minmax(190px,1fr) minmax(300px,540px) minmax(190px,1fr);gap:18px;align-items:start}
+.panel{background:#e8d3ad;border:4px ridge #98734c;padding:14px;box-shadow:3px 4px 8px #49321f55}
+.panel h2{font-size:21px;border-bottom:2px solid #a4865d;padding-bottom:7px}
+.panel section+section{margin-top:22px}
+.center{text-align:center}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer;background:#76502e;color:#fff3db;border:2px outset #a77b4d;padding:8px 11px;margin:3px}
+button:hover{background:#52351f}
+input,textarea,select{width:100%;padding:8px;border:1px solid #98734c;background:#fff8e9;margin:5px 0;color:#30251b}
+textarea{min-height:65px;resize:vertical}
+.small{font-size:13px;color:#5f4b35}
+#board-wrap{width:100%;max-width:540px;margin:auto;padding:8px;background:#593a25;border:5px ridge #b28a5d}
+#board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));width:100%;aspect-ratio:1/1}
+.square{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:1/1;min-width:0;min-height:0;border:0;padding:0;margin:0;font-family:"DejaVu Sans",sans-serif;font-size:clamp(23px,6vw,48px);line-height:1;text-shadow:1px 2px 2px #0005;user-select:none}
+.light{background:#f0d9b5}
+.dark{background:#769656}
+.square.selected{background:#f6ec6a!important}
+.square.last{box-shadow:inset 0 0 0 4px #e5c34b}
+.square.hint:after{content:"";width:25%;height:25%;border-radius:50%;background:#263b1b88;position:absolute}
+.square.capture:after{content:"";position:absolute;width:82%;height:82%;border:4px solid #a42d2488;border-radius:50%}
+.white-piece{color:#fffdf1;-webkit-text-stroke:1px #4a4035}
+.black-piece{color:#29231d;-webkit-text-stroke:.5px #eee0c5}
+#status{background:#e6d1a8;border:2px inset #a4865d;padding:10px;margin:10px 0;min-height:42px;font-weight:bold}
+.controls{margin:10px 0}
+.entry{background:#f7e9ce;border:1px solid #b69a70;padding:9px;margin:8px 0;overflow-wrap:anywhere}
+.entry p{margin:5px 0}
+.vote{float:right}
+#move-list{max-height:130px;overflow-y:auto;background:#f7e9ce;padding:8px;font-size:14px}
+footer{text-align:center;padding:20px;color:#f7e8c9;background:#3d271a;margin-top:20px}
+@media(max-width:900px){main{grid-template-columns:1fr 1fr}.chess-area{grid-column:1/-1;grid-row:1}}
+@media(max-width:560px){main{display:flex;flex-direction:column;padding:8px}.panel,.chess-area{width:100%}.chess-area{order:-1}#board-wrap{padding:5px}.square{font-size:clamp(25px,10vw,43px)}}
+</style>
+</head>
+<body>
+
+<header>
+<h1>♟ Club de Ajedrez ♟</h1>
+<p>Aprendé, jugá y compartí tus conocimientos</p>
+</header>
+
+<main>
+<aside class="panel">
+<section>
+<h2>📚 Consejos para principiantes</h2>
+<p class="small">Compartí un consejo con la comunidad.</p>
+<input id="tip-name" placeholder="Tu nombre o apodo">
+<textarea id="tip-text" placeholder="Escribí tu consejo..."></textarea>
+<button onclick="addTip()">Publicar consejo</button>
+<div id="tips"></div>
+</section>
+</aside>
+
+<section class="chess-area panel center">
+<h2>♜ Tablero de ajedrez ♜</h2>
+<div class="controls">
+<button onclick="setMode('ai')">Jugar contra IA</button>
+<button onclick="setMode('local')">Dos jugadores</button>
+</div>
+<div class="small" id="mode-label">Modo: contra la IA</div>
+<div id="board-wrap"><div id="board"></div></div>
+<div id="status">Turno de blancas.</div>
+<div class="controls">
+<label for="difficulty">Dificultad de la IA:</label>
+<select id="difficulty">
+<option value="1">Nivel 1 - Principiante</option>
+<option value="2">Nivel 2 - Fácil</option>
+<option value="3" selected>Nivel 3 - Intermedio</option>
+<option value="4">Nivel 4 - Avanzado</option>
+<option value="5">Nivel 5 - Experto</option>
+</select>
+<button onclick="newGame()">Nueva partida</button>
+<button onclick="undoMove()">Deshacer</button>
+<button onclick="rotateBoard()">Girar tablero</button>
+</div>
+<h3>Movimientos</h3>
+<div id="move-list">Todavía no hay movimientos.</div>
+<p class="small">En modo local el tablero gira después de cada jugada. En modo IA permanece desde el lado de blancas.</p>
+</section>
+
+<aside class="panel">
+<section>
+<h2>💬 Comentarios</h2>
+<p class="small">¿Qué te parece la página?</p>
+<input id="comment-name" placeholder="Tu nombre o apodo">
+<textarea id="comment-text" placeholder="Escribí tu comentario..."></textarea>
+<button onclick="addComment()">Publicar comentario</button>
+<div id="comments"></div>
+</section>
+<section>
+<h2>📖 Aperturas de la comunidad</h2>
+<input id="opening-name" placeholder="Nombre de la apertura">
+<input id="opening-moves" placeholder="Ej: 1. e4 e5 2. Cf3">
+<input id="opening-author" placeholder="Tu nombre o apodo">
+<button onclick="addOpening()">Enviar apertura</button>
+<div id="openings"></div>
+</section>
+</aside>
+</main>
+
+<footer>Club de Ajedrez · Cada partida es una nueva oportunidad.</footer>
+
+<script>
+const game=new Chess();
+
+const symbols={
+wk:"♔",wq:"♕",wr:"♖",wb:"♗",wn:"♘",wp:"♙",
+bk:"♚",bq:"♛",br:"♜",bb:"♝",bn:"♞",bp:"♟"
+};
+
+let mode="ai",flipped=false,selected=null,legalTargets=[],lastMove=null,thinking=false;
+
+function renderBoard(){
+ const board=document.getElementById("board");
+ board.innerHTML="";
+ const files=flipped?["h","g","f","e","d","c","b","a"]:["a","b","c","d","e","f","g","h"];
+ const ranks=flipped?[1,2,3,4,5,6,7,8]:[8,7,6,5,4,3,2,1];
+
+ for(const rank of ranks){
+  for(const file of files){
+   const name=file+rank,piece=game.get(name);
+   const square=document.createElement("button");
+   const fi=files.indexOf(file),ri=ranks.indexOf(rank);
+   square.className="square "+((fi+ri)%2===0?"light":"dark");
+   if(selected===name)square.classList.add("selected");
+   if(lastMove&&(lastMove.from===name||lastMove.to===name))square.classList.add("last");
+   if(legalTargets.includes(name))square.classList.add(piece?"capture":"hint");
+   if(piece){
+    const span=document.createElement("span");
+    span.textContent=symbols[piece.color+piece.type];
+    span.className=piece.color==="w"?"white-piece":"black-piece";
+    square.appendChild(span);
+   }
+   square.setAttribute("aria-label",name);
+   square.onclick=()=>clickSquare(name);
+   board.appendChild(square);
+  }
+ }
+ updateStatus();
+ updateMoveList();
+}
+
+function clickSquare(name){
+ if(thinking||game.game_over())return;
+ if(mode==="ai"&&game.turn()==="b")return;
+ const piece=game.get(name);
+
+ if(selected&&legalTargets.includes(name)){
+  makeMove(selected,name);
+  return;
+ }
+ if(piece&&piece.color===game.turn()){
+  selected=name;
+  legalTargets=game.moves({square:name,verbose:true}).map(m=>m.to);
+ }else{
+  selected=null;
+  legalTargets=[];
+ }
+ renderBoard();
+}
+
+function makeMove(from,to){
+ const piece=game.get(from);
+ let promotion="q";
+
+ if(piece&&piece.type==="p"&&(to[1]==="8"||to[1]==="1")){
+  const choice=prompt(
+   "¿En qué pieza querés promocionar?\nD = Dama\nT = Torre\nA = Alfil\nC = Caballo",
+   "D"
+  );
+  if(choice===null)return;
+  const options={d:"q",dama:"q",t:"r",torre:"r",a:"b",alfil:"b",c:"n",caballo:"n"};
+  promotion=options[choice.trim().toLowerCase()];
+  if(!promotion){
+   alert("Elegí D, T, A o C.");
+   return;
+  }
+ }
+
+ let move;
+ try{move=game.move({from,to,promotion});}
+ catch(error){move=null;}
+ if(!move)return;
+
+ lastMove={from:move.from,to:move.to};
+ selected=null;
+ legalTargets=[];
+
+ if(mode==="local")flipped=!flipped;
+ renderBoard();
+
+ if(mode==="ai"&&!game.game_over()&&game.turn()==="b"){
+  thinking=true;
+  document.getElementById("status").textContent="La IA está pensando...";
+  setTimeout(aiMove,250);
+ }
+}
+
+function updateStatus(){
+ const status=document.getElementById("status");
+ if(game.in_checkmate()){
+  status.textContent="¡Jaque mate! Ganaron las "+(game.turn()==="w"?"negras.":"blancas.");
+ }else if(game.in_stalemate()){
+  status.textContent="Tablas por ahogado.";
+ }else if(game.in_draw()){
+  status.textContent="La partida terminó en tablas.";
+ }else{
+  let message=game.turn()==="w"?"Turno de blancas.":"Turno de negras.";
+  if(game.in_check())message+=" ¡Jaque!";
+  status.textContent=message;
+ }
+}
+
+function updateMoveList(){
+ const history=game.history();
+ const list=document.getElementById("move-list");
+ if(!history.length){list.textContent="Todavía no hay movimientos.";return;}
+ let text="";
+ for(let i=0;i<history.length;i+=2){
+  text+=(Math.floor(i/2)+1)+". "+history[i]+" "+(history[i+1]||"")+"   ";
+ }
+ list.textContent=text;
+}
+
+function setMode(newMode){
+ mode=newMode;
+ newGame();
+ document.getElementById("mode-label").textContent=
+  mode==="ai"?"Modo: contra la IA":"Modo: dos jugadores en el mismo dispositivo";
+}
+
+function newGame(){
+ game.reset();
+ flipped=false;
+ selected=null;
+ legalTargets=[];
+ lastMove=null;
+ thinking=false;
+ renderBoard();
+}
+
+function rotateBoard(){
+ flipped=!flipped;
+ renderBoard();
+}
+
+function undoMove(){
+ if(thinking)return;
+ if(mode==="ai"){
+  if(game.history().length)game.undo();
+  if(game.turn()==="b"&&game.history().length)game.undo();
+ }else{
+  if(game.history().length){
+   game.undo();
+   flipped=!flipped;
+  }
+ }
+ selected=null;
+ legalTargets=[];
+ lastMove=null;
+ renderBoard();
+}
+
+// IA sencilla con búsqueda minimax.
+const values={p:100,n:320,b:330,r:500,q:900,k:20000};
+
+function evaluateBoard(){
+ let score=0;
+ for(const row of game.board()){
+  for(const piece of row){
+   if(!piece)continue;
+   score+=piece.color==="b"?values[piece.type]:-values[piece.type];
+  }
+ }
+ return score;
+}
+
+function minimax(depth,alpha,beta,maximizing){
+ if(depth===0||game.game_over()){
+  if(game.in_checkmate())return maximizing?-100000-depth:100000+depth;
+  return evaluateBoard();
+ }
+ const moves=game.moves({verbose:true});
+ if(maximizing){
+  let best=-Infinity;
+  for(const move of moves){
+   game.move(move);
+   const score=minimax(depth-1,alpha,beta,false);
+   game.undo();
+   best=Math.max(best,score);
+   alpha=Math.max(alpha,score);
+   if(beta<=alpha)break;
+  }
+  return best;
+ }else{
+  let best=Infinity;
+  for(const move of moves){
+   game.move(move);
+   const score=minimax(depth-1,alpha,beta,true);
+   game.undo();
+   best=Math.min(best,score);
+   beta=Math.min(beta,score);
+   if(beta<=alpha)break;
+  }
+  return best;
+ }
+}
+
+function aiMove(){
+ if(game.game_over()||mode!=="ai"){thinking=false;return;}
+ const level=Number(document.getElementById("difficulty").value);
+ const depth=level<=2?1:level===3?2:level===4?2:3;
+ const moves=game.moves({verbose:true});
+ let bestScore=-Infinity,bestMoves=[];
+
+ for(const move of moves){
+  game.move(move);
+  const score=minimax(depth-1,-Infinity,Infinity,false);
+  game.undo();
+  if(score>bestScore){bestScore=score;bestMoves=[move];}
+  else if(score===bestScore)bestMoves.push(move);
+ }
+
+ if(bestMoves.length){
+  let chosen;
+  if(level===1&&Math.random()<0.45){
+   chosen=moves[Math.floor(Math.random()*moves.length)];
+  }else if(level===2&&Math.random()<0.2){
+   chosen=moves[Math.floor(Math.random()*moves.length)];
+  }else{
+   chosen=bestMoves[Math.floor(Math.random()*bestMoves.length)];
+  }
+  const played=game.move({from:chosen.from,to:chosen.to,promotion:"q"});
+  if(played)lastMove={from:played.from,to:played.to};
+ }
+ thinking=false;
+ renderBoard();
+}
+
+// Publicaciones guardadas en este navegador.
+function readStore(key){
+ try{return JSON.parse(localStorage.getItem(key)||"[]");}
+ catch{return [];}
+}
+function writeStore(key,data){
+ localStorage.setItem(key,JSON.stringify(data));
+}
+function escapeHTML(value){
+ return String(value).replace(/[&<>"']/g,c=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ })[c]);
+}
+
+function addTip(){
+ const name=document.getElementById("tip-name").value.trim()||"Anónimo";
+ const text=document.getElementById("tip-text").value.trim();
+ if(!text)return;
+ const tips=readStore("chess_tips");
+ tips.unshift({name,text});
+ writeStore("chess_tips",tips);
+ document.getElementById("tip-text").value="";
+ renderTips();
+}
+function renderTips(){
+ document.getElementById("tips").innerHTML=readStore("chess_tips").map(t=>
+  `<div class="entry"><b>${escapeHTML(t.name)}</b><p>${escapeHTML(t.text)}</p></div>`
+ ).join("");
+}
+
+function addComment(){
+ const name=document.getElementById("comment-name").value.trim()||"Anónimo";
+ const text=document.getElementById("comment-text").value.trim();
+ if(!text)return;
+ const comments=readStore("chess_comments");
+ comments.unshift({name,text});
+ writeStore("chess_comments",comments);
+ document.getElementById("comment-text").value="";
+ renderComments();
+}
+function renderComments(){
+ document.getElementById("comments").innerHTML=readStore("chess_comments").map(c=>
+  `<div class="entry"><b>${escapeHTML(c.name)}</b><p>${escapeHTML(c.text)}</p></div>`
+ ).join("");
+}
+
+function addOpening(){
+ const name=document.getElementById("opening-name").value.trim();
+ const moves=document.getElementById("opening-moves").value.trim();
+ const author=document.getElementById("opening-author").value.trim()||"Anónimo";
+ if(!name||!moves)return;
+ const openings=readStore("chess_openings");
+ openings.unshift({id:Date.now(),name,moves,author,votes:0});
+ writeStore("chess_openings",openings);
+ document.getElementById("opening-name").value="";
+ document.getElementById("opening-moves").value="";
+ renderOpenings();
+}
+function voteOpening(id){
+ const openings=readStore("chess_openings");
+ const opening=openings.find(o=>o.id===id);
+ if(!opening)return;
+ opening.votes++;
+ writeStore("chess_openings",openings);
+ renderOpenings();
+}
+function renderOpenings(){
+ document.getElementById("openings").innerHTML=readStore("chess_openings").map(o=>
+  `<div class="entry">
+   <button class="vote" onclick="voteOpening(${o.id})">▲ ${o.votes}</button>
+   <b>${escapeHTML(o.name)}</b>
+   <p>${escapeHTML(o.moves)}</p>
+   <span class="small">Por ${escapeHTML(o.author)}</span>
+  </div>`
+ ).join("");
+}
+
+renderBoard();
+renderTips();
+renderComments();
+renderOpenings();
+</script>
+</body>
+                                            </html>
+  
