@@ -1,1 +1,231 @@
-
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Club de Ajedrez</title>
+<style>
+:root {
+  --site-primary: #244c3d;
+  --site-on-primary: #ffffff;
+  --site-secondary: #d8a85d;
+  --site-on-secondary: #20170c;
+  --site-background: #f1eee6;
+  --site-on-background: #20251f;
+  --site-font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --site-font-heading: Georgia, "Times New Roman", serif;
+  --site-heading-scale: 1;
+  --site-spacing-scale: 1;
+  --site-radius-scale: 1;
+  --site-decoration-opacity: 1;
+  color-scheme: light dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--site-font-body); background: var(--site-background); color: var(--site-on-background); }
+#app { min-height: 100vh; width: 100%; border-radius: 0; background-color: light-dark(#f1eee6, #171d19); color: light-dark(#20251f, #e9eee8); }
+.topbar { background: var(--site-primary); color: var(--site-on-primary); padding: calc(18px * var(--site-spacing-scale)) clamp(16px, 4vw, 42px); display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.brand { display:flex; align-items:center; gap:12px; }
+.logo { width:42px; height:42px; display:grid; place-items:center; background:var(--site-secondary); color:var(--site-on-secondary); border-radius:12px; font-size:25px; }
+h1 { font: bold calc(25px * var(--site-heading-scale))/1.1 var(--site-font-heading); margin:0; }
+.tagline { font-size:12px; opacity:.8; margin-top:4px; }
+.status { font-size:12px; border:1px solid #ffffff55; border-radius:99px; padding:8px 12px; white-space:nowrap; }
+main { max-width:1500px; margin:0 auto; padding:24px clamp(12px, 2vw, 28px) 36px; }
+.intro { display:flex; justify-content:space-between; align-items:end; gap:16px; margin:0 0 20px; }
+.intro h2 { font: bold calc(25px * var(--site-heading-scale)) var(--site-font-heading); margin:0 0 5px; }
+.intro p { margin:0; color:light-dark(#626b62,#aab6aa); font-size:13px; }
+.grid { display:grid; grid-template-columns:minmax(220px, .82fr) minmax(330px, 1.35fr) minmax(230px, .88fr); gap:18px; align-items:start; }
+.column { display:grid; gap:18px; min-width:0; }
+.panel { background:light-dark(#fffdf8,#222a25); border:1px solid light-dark(#deded3,#39443c); border-radius:calc(17px * var(--site-radius-scale)); padding:17px; box-shadow:0 5px 18px #17261a0b; }
+.panel-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:13px; }
+.panel h3 { font: bold 18px var(--site-font-heading); margin:0; }
+.kicker { font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:light-dark(#748075,#a3b2a5); font-weight:800; }
+.moves { min-height:220px; max-height:330px; overflow:auto; }
+.move-row { display:grid; grid-template-columns:28px 1fr 1fr; gap:8px; padding:7px 8px; border-radius:8px; font-size:13px; }
+.move-row:nth-child(odd) { background:light-dark(#f2f1e9,#2c352f); }
+.move-num { color:light-dark(#8a9288,#9ba99d); }
+.move-cell { font-weight:650; }
+.empty { color:light-dark(#858d82,#a1ada3); font-size:13px; line-height:1.5; padding:12px 4px; }
+.board-panel { padding:18px; }
+.board-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:13px; gap:12px; }
+.turn { font-size:12px; color:light-dark(#667166,#b1bcb2); }
+.turn strong { color:light-dark(#244c3d,#d8b875); }
+.board-wrap { max-width:650px; margin:0 auto; }
+.board { width:100%; aspect-ratio:1; display:grid; grid-template-columns:repeat(8,1fr); border:5px solid light-dark(#34483b,#647b68); border-radius:5px; overflow:hidden; box-shadow:0 10px 25px #17261a20; }
+.square { border:0; border-radius:0; display:grid; place-items:center; position:relative; padding:0; cursor:pointer; font-family:serif; font-size:clamp(25px,5.4vw,54px); line-height:1; user-select:none; }
+.square.light { background:#eee9d8; color:#20251f; }
+.square.dark { background:#77917a; color:#17221a; }
+.square.selected { outline:4px solid #d6a54f; outline-offset:-4px; }
+.square.target:after { content:""; width:24%; height:24%; border-radius:50%; background:#244c3d88; position:absolute; }
+.square.capture:after { content:""; position:absolute; inset:4px; border:4px solid #b56a42; border-radius:50%; }
+.piece { filter: drop-shadow(0 1px 1px #0004); }
+.board-coords { display:flex; justify-content:space-between; padding:5px 7px 0; font-size:10px; color:light-dark(#7a857a,#aab5ab); }
+.board-actions { display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-top:14px; }
+button, input { font:inherit; }
+.btn { border:0; border-radius:10px; padding:10px 13px; cursor:pointer; font-weight:700; font-size:12px; background:var(--site-primary); color:var(--site-on-primary); }
+.btn.secondary { background:light-dark(#e9eee7,#34443a); color:light-dark(#244c3d,#e8eee8); }
+.btn.gold { background:var(--site-secondary); color:var(--site-on-secondary); }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+.field { display:flex; gap:7px; margin-top:12px; }
+.field input { min-width:0; flex:1; border:1px solid light-dark(#d7dbd1,#465249); background:light-dark(#fff,#19211c); color:inherit; border-radius:9px; padding:10px; font-size:12px; outline:none; }
+.field input:focus { border-color:var(--site-secondary); }
+.list { display:grid; gap:8px; }
+.list-item { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px; background:light-dark(#f3f2eb,#2b342e); border-radius:10px; font-size:12px; }
+.list-item strong { font-size:12px; }
+.vote { border:1px solid light-dark(#d8ddd4,#526055); color:inherit; background:transparent; border-radius:8px; padding:5px 8px; cursor:pointer; font-size:11px; }
+.vote:disabled { opacity:.5; }
+.tip { padding:10px 11px; border-left:3px solid var(--site-secondary); background:light-dark(#f5f2e8,#2b342e); border-radius:0 9px 9px 0; font-size:12px; line-height:1.45; }
+.tip small { display:block; margin-top:5px; color:light-dark(#778176,#a6b2a8); }
+.note { color:light-dark(#7b847a,#a5b1a7); font-size:10px; line-height:1.45; margin-top:10px; }
+footer { text-align:center; padding:20px; font-size:11px; color:light-dark(#7b847a,#9eaaa0); }
+@media(max-width:1000px) { .grid { grid-template-columns:minmax(0,1fr) minmax(0,1.35fr); } .right-col { grid-column:1 / -1; grid-template-columns:1fr 1fr; } }
+@media(max-width:680px) { .topbar { align-items:flex-start; } .status { display:none; } .intro { display:block; } .grid { grid-template-columns:1fr; } .board-col { grid-row:1; } .left-col { grid-row:2; } .right-col { grid-row:3; grid-template-columns:1fr; } .board-panel { padding:12px; } .square { font-size:clamp(27px,9vw,48px); } }
+</style>
+</head>
+<body>
+<div id="app">
+<header class="topbar">
+  <div class="brand"><div class="logo">♞</div><div><h1>EL RINCÓN DEL AJEDREZ</h1><div class="tagline">Jugá, compartí y aprendé. Sin ponerse demasiado serio.</div></div></div>
+  <div class="status">♟ Comunidad abierta · Demo interactiva</div>
+</header>
+<main>
+  <div class="intro"><div><h2>La plaza de los ajedrecistas</h2><p>Un tablero para jugar y dos rincones para compartir ideas.</p></div><span class="kicker">Hecho por jugadores, para jugadores</span></div>
+  <div class="grid">
+    <section class="column left-col">
+      <div class="panel">
+        <div class="panel-head"><h3>📝 Anotador</h3><span class="kicker">Partida actual</span></div>
+        <div class="moves" id="moves"><div class="empty" id="move-empty">Todavía no hay movimientos. ¡Hacé el primero!</div></div>
+        <div class="note">Los movimientos se anotan automáticamente mientras jugás en este tablero.</div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>💡 Consejos para principiantes</h3><span class="kicker">De la comunidad</span></div>
+        <div class="list" id="tips">
+          <div class="tip">Antes de atacar, desarrollá tus piezas y cuidá tu rey.<small>— Consejo de la casa</small></div>
+          <div class="tip">No muevas la misma pieza muchas veces en la apertura sin un motivo.<small>— Consejo de la casa</small></div>
+        </div>
+        <form class="field" id="tip-form"><input id="tip-input" maxlength="110" placeholder="Compartí un consejo…" aria-label="Nuevo consejo" required><button class="btn gold" type="submit">＋</button></form>
+        <div class="note">En esta vista previa, los aportes son locales y temporales.</div>
+      </div>
+    </section>
+    <section class="column board-col">
+      <div class="panel board-panel">
+        <div class="board-top"><div><h3>♟ Tablero de juego</h3><div class="turn" id="turn">Juegan blancas</div></div><span class="kicker">Dos jugadores</span></div>
+        <div class="board-wrap"><div class="board" id="board" role="group" aria-label="Tablero de ajedrez"></div><div class="board-coords"><span>a · b · c · d · e · f · g · h</span><span>8 → 1</span></div></div>
+        <div class="board-actions"><button class="btn secondary" id="reset">↻ Reiniciar</button><button class="btn" id="undo">Deshacer</button></div>
+        <div class="note" id="board-note">Elegí una pieza y después la casilla de destino. Se juega por turnos en el mismo dispositivo y el tablero gira automáticamente después de cada jugada. Reglas simplificadas: esta demo todavía no valida jaque ni enroque.</div>
+        <div class="board-actions"><button class="btn gold" disabled title="La IA se puede agregar en una siguiente versión">♟ Jugar contra IA · próximamente</button></div>
+      </div>
+    </section>
+    <section class="column right-col">
+      <div class="panel">
+        <div class="panel-head"><h3>📚 Aperturas favoritas</h3><span class="kicker">Votá y sumá</span></div>
+        <div class="list" id="openings">
+          <div class="list-item"><strong>Italiana</strong><button class="vote" type="button">♡ <span>8</span></button></div>
+          <div class="list-item"><strong>Siciliana</strong><button class="vote" type="button">♡ <span>7</span></button></div>
+          <div class="list-item"><strong>Caro-Kann</strong><button class="vote" type="button">♡ <span>6</span></button></div>
+          <div class="list-item"><strong>Gambito de dama</strong><button class="vote" type="button">♡ <span>5</span></button></div>
+        </div>
+        <form class="field" id="opening-form"><input id="opening-input" maxlength="45" placeholder="Tu apertura favorita…" aria-label="Nueva apertura" required><button class="btn gold" type="submit">＋</button></form>
+        <div class="note">Los votos y aportes son demostrativos: todavía no se comparten entre visitantes.</div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>📣 La idea</h3><span class="kicker">Reglas del rincón</span></div>
+        <div class="tip">Compartí aperturas, consejos y partidas. Se puede debatir, pero siempre con respeto.</div>
+        <p class="note">Esta es una primera maqueta para probar el diseño. Para que todos jueguen online entre sí y vean los mismos aportes, después hay que conectarla a un servidor y publicar la web.</p>
+      </div>
+    </section>
+  </div>
+</main>
+<footer>♞ EL RINCÓN DEL AJEDREZ · Una partida siempre puede empezar de nuevo.</footer>
+</div>
+<script>
+const initial = [
+ ['r','n','b','q','k','b','n','r'],
+ ['p','p','p','p','p','p','p','p'],
+ ['','','','','','','',''],['','','','','','','',''],['','','','','','','',''],['','','','','','','',''],
+ ['P','P','P','P','P','P','P','P'],
+ ['R','N','B','Q','K','B','N','R']
+];
+let board = initial.map(r=>r.slice()), whiteTurn=true, selected=null, history=[], notation=[], flipped=false;
+const boardEl=document.getElementById('board');
+const glyph={K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙',k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
+const files='abcdefgh';
+function isWhite(p){return p && p===p.toUpperCase();}
+function inside(r,c){return r>=0&&r<8&&c>=0&&c<8;}
+function pseudoMoves(r,c){
+ const p=board[r][c]; if(!p)return [];
+ const white=isWhite(p), type=p.toLowerCase(), out=[];
+ const add=(rr,cc)=>{if(!inside(rr,cc))return false; const t=board[rr][cc]; if(t && isWhite(t)===white)return false; out.push([rr,cc]); return !t;};
+ if(type==='p'){
+  const d=white?-1:1, start=white?6:1;
+  if(inside(r+d,c)&&!board[r+d][c]){out.push([r+d,c]); if(r===start&&!board[r+2*d][c])out.push([r+2*d,c]);}
+  for(const dc of [-1,1])if(inside(r+d,c+dc)&&board[r+d][c+dc]&&isWhite(board[r+d][c+dc])!==white)out.push([r+d,c+dc]);
+ } else if(type==='n'){
+  for(const [dr,dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]])add(r+dr,c+dc);
+ } else {
+  let dirs=[]; if(type==='b'||type==='q')dirs.push([-1,-1],[-1,1],[1,-1],[1,1]); if(type==='r'||type==='q')dirs.push([-1,0],[1,0],[0,-1],[0,1]); if(type==='k')dirs=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+  for(const [dr,dc] of dirs){let rr=r+dr,cc=c+dc;while(inside(rr,cc)){const clear=add(rr,cc);if(type==='k'||!clear)break;rr+=dr;cc+=dc;}}
+ }
+ return out;
+}
+function squareName(r,c){return files[c]+(8-r);}
+function render(){
+ boardEl.innerHTML='';
+ for(let vr=0;vr<8;vr++)for(let vc=0;vc<8;vc++){
+  const r=flipped?7-vr:vr,c=flipped?7-vc:vc,p=board[r][c],btn=document.createElement('button');
+  btn.type='button';btn.className='square '+((r+c)%2===0?'light':'dark');
+  if(selected&&selected[0]===r&&selected[1]===c)btn.classList.add('selected');
+  if(selected&&pseudoMoves(...selected).some(([rr,cc])=>rr===r&&cc===c))btn.classList.add(p?'capture':'target');
+  btn.innerHTML=p?`<span class="piece">${glyph[p]}</span>`:'';
+  btn.setAttribute('aria-label',`${squareName(r,c)} ${p?'ocupada':'vacía'}`);btn.addEventListener('click',()=>clickSquare(r,c));boardEl.appendChild(btn);
+ }
+ document.getElementById('turn').innerHTML=`Juegan <strong>${whiteTurn?'blancas':'negras'}</strong>`;
+ const m=document.getElementById('moves');
+ if(!notation.length)m.innerHTML='<div class="empty">Todavía no hay movimientos. ¡Hacé el primero!</div>';
+ else {m.innerHTML='';for(let i=0;i<notation.length;i+=2){const row=document.createElement('div');row.className='move-row';row.innerHTML=`<span class="move-num">${i/2+1}.</span><span class="move-cell">${notation[i]}</span><span class="move-cell">${notation[i+1]||''}</span>`;m.appendChild(row);}m.scrollTop=m.scrollHeight;}
+}
+function clickSquare(r,c){
+ const p=board[r][c];
+ if(!selected){if(p&&isWhite(p)===whiteTurn){selected=[r,c];render();}return;}
+ if(selected[0]===r&&selected[1]===c){selected=null;render();return;}
+ const [sr,sc]=selected, piece=board[sr][sc], valid=pseudoMoves(sr,sc).some(([rr,cc])=>rr===r&&cc===c);
+ if(p&&isWhite(p)===whiteTurn){selected=[r,c];render();return;}
+ if(!valid){selected=null;render();return;}
+ const capture=!!board[r][c], moving=piece;
+ board[r][c]=moving;board[sr][sc]='';
+ if(moving.toLowerCase()==='p'&&(r===0||r===7))board[r][c]=isWhite(moving)?'Q':'q';
+ const san=(moving.toLowerCase()==='p'?'':moving.toUpperCase())+(capture?'x':'')+squareName(r,c)+(moving.toLowerCase()==='p'&&(r===0||r===7)?'=Q':'');
+ history.push({board:board.map(row=>row.slice()),whiteTurn,notation:notation.slice(),previous:{boardBefore:null}});
+ notation.push(san);whiteTurn=!whiteTurn;flipped=!flipped;selected=null;render();
+}
+document.getElementById('reset').addEventListener('click',()=>{board=initial.map(r=>r.slice());whiteTurn=true;selected=null;history=[];notation=[];render();});
+document.getElementById('undo').addEventListener('click',()=>{
+ if(!notation.length)return;
+ // Rebuild from the initial position using the recorded move list.
+ const last=notation.pop();
+ board=initial.map(r=>r.slice());whiteTurn=true;
+ for(const san of notation){ replaySan(san); }
+ selected=null;render();
+});
+function replaySan(san){
+ const dest=san.slice(-2),c=files.indexOf(dest[0]),r=8-Number(dest[1]);
+ const capture=san.includes('x'),promotion=san.includes('=');
+ let type='p'; if(/^[KQRBN]/.test(san))type=san[0].toLowerCase();
+ const candidates=[];
+ for(let rr=0;rr<8;rr++)for(let cc=0;cc<8;cc++){const p=board[rr][cc];if(p&&isWhite(p)===whiteTurn&&p.toLowerCase()===type&&pseudoMoves(rr,cc).some(([a,b])=>a===r&&b===c))candidates.push([rr,cc]);}
+ if(candidates.length){const [sr,sc]=candidates[0],p=board[sr][sc];board[r][c]=promotion?(whiteTurn?'Q':'q'):p;board[sr][sc]='';whiteTurn=!whiteTurn;}
+}
+function bindForm(formId,inputId,listId,kind){
+ document.getElementById(formId).addEventListener('submit',e=>{e.preventDefault();const input=document.getElementById(inputId),value=input.value.trim();if(!value)return;
+ const item=document.createElement(kind==='tip'?'div':'div');
+ if(kind==='tip'){item.className='tip';item.textContent=value;const small=document.createElement('small');small.textContent='— Aporte de la comunidad';item.appendChild(small);}
+ else {item.className='list-item';const strong=document.createElement('strong');strong.textContent=value;const vote=document.createElement('button');vote.type='button';vote.className='vote';vote.innerHTML='♡ <span>0</span>';vote.addEventListener('click',()=>{const n=vote.querySelector('span');n.textContent=Number(n.textContent)+1;vote.disabled=true;});item.append(strong,vote);}
+ document.getElementById(listId).prepend(item);input.value='';
+ });
+}
+bindForm('tip-form','tip-input','tips','tip');bindForm('opening-form','opening-input','openings','opening');
+document.querySelectorAll('.vote').forEach(btn=>btn.addEventListener('click',()=>{const n=btn.querySelector('span');n.textContent=Number(n.textContent)+1;btn.disabled=true;}));
+render();
+</script>
+</body>
+                                                                                                                              </html>
+                                                                
