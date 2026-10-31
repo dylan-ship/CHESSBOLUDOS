@@ -28,7 +28,8 @@ textarea{min-height:65px;resize:vertical}
  margin:auto;
  padding:8px;
  background:#593a25;
- border:5px ridge #b28a5d
+ border:5px ridge #b28a5d;
+ position:relative;
 }
 
 #board{
@@ -98,6 +99,32 @@ textarea{min-height:65px;resize:vertical}
  border-radius:50%
 }
 
+/* Mensaje de victoria temporal */
+#victory-message{
+ position:absolute;
+ inset:8px;
+ display:none;
+ align-items:center;
+ justify-content:center;
+ padding:20px;
+ text-align:center;
+ color:#fff3db;
+ background:#593a25;
+ font-size:clamp(22px,5vw,38px);
+ font-weight:bold;
+ opacity:1;
+ z-index:2;
+}
+#board-wrap.show-victory #victory-message{
+ display:flex;
+ animation:victoryFade 1s ease-out forwards;
+}
+#board-wrap.show-victory #board{visibility:hidden}
+@keyframes victoryFade{
+ from{opacity:1}
+ to{opacity:0}
+}
+
 #status{background:#e6d1a8;border:2px inset #a4865d;padding:10px;margin:10px 0;min-height:42px;font-weight:bold}
 .controls{margin:10px 0}
 .entry{background:#f7e9ce;border:1px solid #b69a70;padding:9px;margin:8px 0;overflow-wrap:anywhere}
@@ -146,7 +173,17 @@ footer{text-align:center;padding:20px;color:#f7e8c9;background:#3d271a;margin-to
 <button onclick="setMode('local')">Dos jugadores</button>
 </div>
 <div class="small" id="mode-label">Modo: contra la IA</div>
-<div id="board-wrap"><div id="board"></div></div>
+<div id="color-choice" class="controls">
+<label for="player-color">Elegí tu color:</label>
+<select id="player-color" onchange="changePlayerColor(this.value)">
+<option value="w" selected>Blancas</option>
+<option value="b">Negras</option>
+</select>
+</div>
+<div id="board-wrap">
+ <div id="board"></div>
+ <div id="victory-message">¡Felicidades crack (pelotudo)!</div>
+</div>
 <div id="status">Turno de blancas.</div>
 <div class="controls">
 <label for="difficulty">Dificultad de la IA:</label>
@@ -163,7 +200,7 @@ footer{text-align:center;padding:20px;color:#f7e8c9;background:#3d271a;margin-to
 </div>
 <h3>Movimientos</h3>
 <div id="move-list">Todavía no hay movimientos.</div>
-<p class="small">En modo local el tablero gira después de cada jugada. En modo IA permanece desde el lado de blancas.</p>
+<p class="small">En modo local el tablero gira después de cada jugada. En modo IA permanece desde el lado del jugador.</p>
 </section>
 
 <aside class="panel">
@@ -198,6 +235,7 @@ bk:"♚",bq:"♛",br:"♜",bb:"♝",bn:"♞",bp:"♟"
 };
 
 let mode="ai",flipped=false,selected=null,legalTargets=[],lastMove=null,thinking=false;
+let playerColor="w",aiColor="b",victoryShown=false,victoryTimer=null;
 
 function renderBoard(){
  const board=document.getElementById("board");
@@ -231,7 +269,7 @@ function renderBoard(){
 
 function clickSquare(name){
  if(thinking||game.game_over())return;
- if(mode==="ai"&&game.turn()==="b")return;
+ if(mode==="ai"&&game.turn()!==playerColor)return;
  const piece=game.get(name);
 
  if(selected&&legalTargets.includes(name)){
@@ -278,17 +316,38 @@ function makeMove(from,to){
  if(mode==="local")flipped=!flipped;
  renderBoard();
 
- if(mode==="ai"&&!game.game_over()&&game.turn()==="b"){
-  thinking=true;
-  document.getElementById("status").textContent="La IA está pensando...";
-  setTimeout(aiMove,250);
+ if(mode==="ai"&&!game.game_over()&&game.turn()===aiColor){
+  startAITurn();
  }
+}
+
+function startAITurn(){
+ if(mode!=="ai"||game.game_over()||game.turn()!==aiColor)return;
+ thinking=true;
+ document.getElementById("status").textContent="La IA está pensando...";
+ setTimeout(aiMove,250);
+}
+
+function showVictoryMessage(){
+ if(victoryShown)return;
+ victoryShown=true;
+ const wrap=document.getElementById("board-wrap");
+ const message=document.getElementById("victory-message");
+ clearTimeout(victoryTimer);
+ wrap.classList.remove("show-victory");
+ message.textContent="¡Felicidades crack (pelotudo)!";
+ void wrap.offsetWidth;
+ wrap.classList.add("show-victory");
+ victoryTimer=setTimeout(()=>{
+  wrap.classList.remove("show-victory");
+ },1000);
 }
 
 function updateStatus(){
  const status=document.getElementById("status");
  if(game.in_checkmate()){
-  status.textContent="¡Felicidades crack (pelotudo)!";
+  status.textContent="¡Jaque mate!";
+  if(mode==="local"||game.turn()===aiColor)showVictoryMessage();
  }else if(game.in_stalemate()){
   status.textContent="Tablas por ahogado.";
  }else if(game.in_draw()){
@@ -313,19 +372,30 @@ function updateMoveList(){
 
 function setMode(newMode){
  mode=newMode;
+ document.getElementById("color-choice").style.display=mode==="ai"?"block":"none";
  newGame();
  document.getElementById("mode-label").textContent=
   mode==="ai"?"Modo: contra la IA":"Modo: dos jugadores en el mismo dispositivo";
 }
 
+function changePlayerColor(color){
+ playerColor=color==="b"?"b":"w";
+ aiColor=playerColor==="w"?"b":"w";
+ newGame();
+}
+
 function newGame(){
+ clearTimeout(victoryTimer);
+ document.getElementById("board-wrap").classList.remove("show-victory");
+ victoryShown=false;
  game.reset();
- flipped=false;
+ flipped=mode==="ai"&&playerColor==="b";
  selected=null;
  legalTargets=[];
  lastMove=null;
  thinking=false;
  renderBoard();
+ if(mode==="ai"&&game.turn()===aiColor)startAITurn();
 }
 
 function rotateBoard(){
@@ -336,8 +406,8 @@ function rotateBoard(){
 function undoMove(){
  if(thinking)return;
  if(mode==="ai"){
-  if(game.history().length)game.undo();
-  if(game.turn()==="b"&&game.history().length)game.undo();
+  if(game.turn()===playerColor&&game.history().length)game.undo();
+  if(game.turn()===aiColor&&game.history().length)game.undo();
  }else{
   if(game.history().length){
    game.undo();
@@ -347,6 +417,8 @@ function undoMove(){
  selected=null;
  legalTargets=[];
  lastMove=null;
+ victoryShown=false;
+ document.getElementById("board-wrap").classList.remove("show-victory");
  renderBoard();
 }
 
@@ -358,7 +430,7 @@ function evaluateBoard(){
  for(const row of game.board()){
   for(const piece of row){
    if(!piece)continue;
-   score+=piece.color==="b"?values[piece.type]:-values[piece.type];
+   score+=piece.color===aiColor?values[piece.type]:-values[piece.type];
   }
  }
  return score;
@@ -396,7 +468,7 @@ function minimax(depth,alpha,beta,maximizing){
 }
 
 function aiMove(){
- if(game.game_over()||mode!=="ai"){thinking=false;return;}
+ if(game.game_over()||mode!=="ai"||game.turn()!==aiColor){thinking=false;return;}
  const level=Number(document.getElementById("difficulty").value);
  const depth=level<=2?1:level===3?2:level===4?2:3;
  const moves=game.moves({verbose:true});
@@ -503,6 +575,7 @@ function renderOpenings(){
  ).join("");
 }
 
+document.getElementById("color-choice").style.display="block";
 renderBoard();
 renderTips();
 renderComments();
@@ -510,3 +583,4 @@ renderOpenings();
 </script>
 </body>
  </html>
+ 
