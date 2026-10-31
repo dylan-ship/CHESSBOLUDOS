@@ -23,33 +23,50 @@ textarea{min-height:65px;resize:vertical}
 .small{font-size:13px;color:#5f4b35}
 #board-wrap{width:100%;max-width:540px;margin:auto;padding:8px;background:#593a25;border:5px ridge #b28a5d}
 #board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));width:100%;aspect-ratio:1/1}
-.square{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:1/1;min-width:0;min-height:0;border:0;padding:0;margin:0;font-family:"DejaVu Sans",sans-serif;font-size:clamp(23px,6vw,48px);line-height:1;text-shadow:1px 2px 2px #0005;user-select:none}
+
+/* Tablero clásico */
+.square{
+ position:relative;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ aspect-ratio:1/1;
+ min-width:0;
+ min-height:0;
+ border:0;
+ padding:0;
+ margin:0;
+ font-family:"DejaVu Sans",sans-serif;
+ font-size:clamp(23px,6vw,48px);
+ line-height:1;
+ user-select:none;
+}
+
+/* Colores tradicionales */
 .light{background:#f0d9b5}
-.dark{background:#769656}
+.dark{background:#b58863}
+
+/* Piezas lisas */
+.white-piece{
+ color:#ffffff;
+ -webkit-text-fill-color:#ffffff;
+ -webkit-text-stroke:0.8px #333333;
+ text-shadow:none;
+ filter:none;
+}
+
+.black-piece{
+ color:#111111;
+ -webkit-text-fill-color:#111111;
+ -webkit-text-stroke:0.5px #000000;
+ text-shadow:none;
+ filter:none;
+}
+
 .square.selected{background:#f6ec6a!important}
 .square.last{box-shadow:inset 0 0 0 4px #e5c34b}
 .square.hint:after{content:"";width:25%;height:25%;border-radius:50%;background:#263b1b88;position:absolute}
 .square.capture:after{content:"";position:absolute;width:82%;height:82%;border:4px solid #a42d2488;border-radius:50%}
-
-/* Piezas de madera */
-.white-piece{
- background:linear-gradient(115deg,#fff0c9 0%,#d9ad6d 28%,#fff1c9 48%,#bd8750 72%,#f4d49b 100%);
- -webkit-background-clip:text;
- background-clip:text;
- color:transparent;
- -webkit-text-fill-color:transparent;
- -webkit-text-stroke:1px #76502e;
- filter:drop-shadow(1px 2px 1px #38251699);
-}
-.black-piece{
- background:linear-gradient(115deg,#b9824b 0%,#5b321d 28%,#a66b39 48%,#3b2117 72%,#8b5730 100%);
- -webkit-background-clip:text;
- background-clip:text;
- color:transparent;
- -webkit-text-fill-color:transparent;
- -webkit-text-stroke:1px #2a1a12;
- filter:drop-shadow(1px 2px 1px #f1d5ad88);
-}
 
 #status{background:#e6d1a8;border:2px inset #a4865d;padding:10px;margin:10px 0;min-height:42px;font-weight:bold}
 .controls{margin:10px 0}
