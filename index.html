@@ -21,10 +21,25 @@ button:hover{background:#52351f}
 input,textarea,select{width:100%;padding:8px;border:1px solid #98734c;background:#fff8e9;margin:5px 0;color:#30251b}
 textarea{min-height:65px;resize:vertical}
 .small{font-size:13px;color:#5f4b35}
-#board-wrap{width:100%;max-width:540px;margin:auto;padding:8px;background:#593a25;border:5px ridge #b28a5d}
-#board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));width:100%;aspect-ratio:1/1}
 
-/* Tablero clásico */
+#board-wrap{
+ width:100%;
+ max-width:540px;
+ margin:auto;
+ padding:8px;
+ background:#593a25;
+ border:5px ridge #b28a5d
+}
+
+#board{
+ display:grid;
+ grid-template-columns:repeat(8,minmax(0,1fr));
+ grid-template-rows:repeat(8,minmax(0,1fr));
+ width:100%;
+ aspect-ratio:1/1
+}
+
+/* TABLERO CLÁSICO */
 .square{
  position:relative;
  display:flex;
@@ -42,31 +57,46 @@ textarea{min-height:65px;resize:vertical}
  user-select:none;
 }
 
-/* Colores tradicionales */
 .light{background:#f0d9b5}
 .dark{background:#b58863}
 
-/* Piezas lisas */
+/* PIEZAS BLANCAS RELLENAS */
 .white-piece{
  color:#ffffff;
  -webkit-text-fill-color:#ffffff;
- -webkit-text-stroke:0.8px #333333;
- text-shadow:none;
+ -webkit-text-stroke:1.3px #171717;
+ text-shadow:0 1px 1px #000;
  filter:none;
 }
 
+/* PIEZAS NEGRAS RELLENAS */
 .black-piece{
- color:#111111;
- -webkit-text-fill-color:#111111;
- -webkit-text-stroke:0.5px #000000;
+ color:#080808;
+ -webkit-text-fill-color:#080808;
+ -webkit-text-stroke:1px #e6dfd2;
  text-shadow:none;
  filter:none;
 }
 
-.square.selected{background:#f6ec6a!important}
-.square.last{box-shadow:inset 0 0 0 4px #e5c34b}
-.square.hint:after{content:"";width:25%;height:25%;border-radius:50%;background:#263b1b88;position:absolute}
-.square.capture:after{content:"";position:absolute;width:82%;height:82%;border:4px solid #a42d2488;border-radius:50%}
+/* MOVIMIENTOS Y SELECCIÓN */
+.square.selected{background:#baca44!important}
+.square.last{box-shadow:inset 0 0 0 3px #d6c64b}
+.square.hint:after{
+ content:"";
+ width:25%;
+ height:25%;
+ border-radius:50%;
+ background:#263b1b88;
+ position:absolute
+}
+.square.capture:after{
+ content:"";
+ position:absolute;
+ width:82%;
+ height:82%;
+ border:4px solid #a42d2488;
+ border-radius:50%
+}
 
 #status{background:#e6d1a8;border:2px inset #a4865d;padding:10px;margin:10px 0;min-height:42px;font-weight:bold}
 .controls{margin:10px 0}
@@ -75,8 +105,19 @@ textarea{min-height:65px;resize:vertical}
 .vote{float:right}
 #move-list{max-height:130px;overflow-y:auto;background:#f7e9ce;padding:8px;font-size:14px}
 footer{text-align:center;padding:20px;color:#f7e8c9;background:#3d271a;margin-top:20px}
-@media(max-width:900px){main{grid-template-columns:1fr 1fr}.chess-area{grid-column:1/-1;grid-row:1}}
-@media(max-width:560px){main{display:flex;flex-direction:column;padding:8px}.panel,.chess-area{width:100%}.chess-area{order:-1}#board-wrap{padding:5px}.square{font-size:clamp(25px,10vw,43px)}}
+
+@media(max-width:900px){
+ main{grid-template-columns:1fr 1fr}
+ .chess-area{grid-column:1/-1;grid-row:1}
+}
+
+@media(max-width:560px){
+ main{display:flex;flex-direction:column;padding:8px}
+ .panel,.chess-area{width:100%}
+ .chess-area{order:-1}
+ #board-wrap{padding:5px}
+ .square{font-size:clamp(25px,10vw,43px)}
+}
 </style>
 </head>
 <body>
@@ -468,4 +509,3 @@ renderOpenings();
 </script>
 </body>
  </html>
- 
